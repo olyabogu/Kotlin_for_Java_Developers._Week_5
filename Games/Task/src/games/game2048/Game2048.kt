@@ -2,6 +2,10 @@ package games.game2048
 
 import board.Cell
 import board.Direction
+import board.Direction.DOWN
+import board.Direction.LEFT
+import board.Direction.RIGHT
+import board.Direction.UP
 import board.GameBoard
 import board.createGameBoard
 import games.game.Game
@@ -12,8 +16,7 @@ import games.game.Game
  *
  * After implementing it you can try to play the game running 'PlayGame2048'.
  */
-fun newGame2048(initializer: Game2048Initializer<Int> = RandomGame2048Initializer): Game =
-    Game2048(initializer)
+fun newGame2048(initializer: Game2048Initializer<Int> = RandomGame2048Initializer): Game = Game2048(initializer)
 
 class Game2048(private val initializer: Game2048Initializer<Int>) : Game {
     private val board = createGameBoard<Int?>(4)
@@ -56,26 +59,48 @@ fun GameBoard<Int?>.addNewValue(initializer: Game2048Initializer<Int>) {
  * Return 'true' if the values were moved and 'false' otherwise.
  */
 fun GameBoard<Int?>.moveValuesInRowOrColumn(rowOrColumn: List<Cell>): Boolean {
-    val cellToValue: MutableMap<Cell, Int?> = mutableMapOf()
-    rowOrColumn.forEach { cell ->
-        cellToValue[cell] = get(cell)
+    val previousValues = rowOrColumn.map { this[it] }
+    val movedValues = rowOrColumn.map { this[it] }.moveAndMergeEqual { it * 2 }
+    rowOrColumn.forEachIndexed { index, cell ->
+        val value = movedValues.getOrNull(index)
+        this[cell] = value
     }
-    val anyAvailable = cellToValue.any { (_, value) -> value == null }
-    return if (anyAvailable) {
-
-        true
-    } else {
-        false
-    }
+    return movedValues.isNotEmpty() && previousValues != movedValues
 }
 
-/*
- * Update the values stored in a board,
- * so that the values were "moved" to the specified direction
- * following the rules of the 2048 game .
- * Use the 'moveValuesInRowOrColumn' function above.
- * Return 'true' if the values were moved and 'false' otherwise.
- */
-fun GameBoard<Int?>.moveValues(direction: Direction): Boolean {
-    TODO()
-}
+    /*
+     * Update the values stored in a board,
+     * so that the values were "moved" to the specified direction
+     * following the rules of the 2048 game .
+     * Use the 'moveValuesInRowOrColumn' function above.
+     * Return 'true' if the values were moved and 'false' otherwise.
+     */
+    fun GameBoard<Int?>.moveValues(direction: Direction): Boolean {
+        val moved = mutableListOf<Boolean>()
+        when (direction) {
+            UP -> {
+                for (j in 1..width) {
+                    moved.add(moveValuesInRowOrColumn(getColumn(1..4, j)))
+                }
+            }
+
+            DOWN -> {
+                for (j in 1..width) {
+                    moved.add(moveValuesInRowOrColumn(getColumn(4 downTo 1, j)))
+                }
+            }
+
+            RIGHT -> {
+                for (i in 1..width) {
+                    moved.add(moveValuesInRowOrColumn(getRow(i, 4 downTo 1)))
+                }
+            }
+
+            LEFT -> {
+                for (i in 1..width) {
+                    moved.add(moveValuesInRowOrColumn(getRow(i, 1..4)))
+                }
+            }
+        }
+        return moved.contains(true)
+    }
