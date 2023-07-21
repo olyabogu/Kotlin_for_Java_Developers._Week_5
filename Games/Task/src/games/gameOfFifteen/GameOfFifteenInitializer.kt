@@ -16,8 +16,20 @@ class RandomGameInitializer : GameOfFifteenInitializer {
      * If the permutation is not even, make it even (for instance,
      * by swapping two numbers).
      */
-    override val initialPermutation by lazy {
-        TODO()
+    override val initialPermutation: List<Int> by lazy {
+        val shuffled = (1..15).shuffled().toMutableList()
+        val even = isEven(shuffled)
+        if (!even) {
+            val n = shuffled.size
+            for (i in 0 until n) for (j in i + 1 until n) if (shuffled[i] > shuffled[j]) {
+                val a = shuffled[i]
+                val b = shuffled[j]
+                shuffled[i] = b
+                shuffled[j] = a
+                break
+            }
+        }
+        shuffled
     }
 }
 
